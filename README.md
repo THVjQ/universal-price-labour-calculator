@@ -1,14 +1,51 @@
-Universal Price Labour Calculator
+# Universal Price & Labour Calculator
 
-MAKE BY RK - COFFS STORE
+**Version:** 1.1 · **Site:** All sites
 
-when selecting a Price from any supplyer or price feild it show a drop down with:
-  Price + GST
-  Price + GST + $80
-  Price + GST + $130
-  Price + GST + $150
-  Price + GST + $200
+Highlight any price on any webpage and instantly see it broken down with GST and common labour rates. Made by RK — Coffs Harbour store.
 
-How to Use Install TamperMonkey and add in a new file (replace Templete)
+---
 
-If you are using Multiple Of my script Let me now in the issues section and i will spend more time finshing of the Multipe Scripts Addon to TamperMonkey to allow Live Updates accross script
+## What It Does
+
+Select/highlight any number or price on any webpage — a popup appears showing:
+
+| Label | Calculation |
+|-------|-------------|
+| Price + GST | price × 1.1 |
+| Price + GST + $80 | price × 1.1 + $80 |
+| Price + GST + $130 | price × 1.1 + $130 |
+| Price + GST + $150 | price × 1.1 + $150 |
+| Price + GST + $200 | price × 1.1 + $200 |
+
+---
+
+## How to Use
+
+1. Highlight any number or price on any page
+2. The calculator popup appears automatically near your selection
+3. Click elsewhere or deselect to dismiss it
+
+---
+
+## Install
+
+1. Install [Tampermonkey](https://www.tampermonkey.net/) in Chrome
+2. Click **Raw** on the `.user.js` file in this repo
+3. Tampermonkey will prompt to install — click **Install**
+4. Highlight any number on any webpage — the popup appears
+
+---
+
+## Notes
+
+- Runs on all websites (`*://*/*`)
+- The popup is non-interactive (`pointer-events: none`) — it will not interfere with clicking
+- Handles numbers with or without a `$` prefix
+- No configuration required
+
+---
+
+## Using Multiple Scripts
+
+If you are using several of the THVjQ Tampermonkey scripts, check the **Issues** tab — a multi-script addon with live updates across all scripts is in progress.
