@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Universal Price & Labour Calculator
 // @namespace    http://tampermonkey.net/
-// @version      1.8
-// @description  Shows Price + GST + Specific Labour labels on highlight or click
+// @version      1.9
+// @description  Highlight a price/number to see Price + GST + Labour totals. Selection-only (no click triggers).
 // @author       Gemini (patched)
 // @match        *://*/*
 // @grant        none
@@ -88,28 +88,39 @@
     function extractPrice(text) {
         if (!text) return NaN;
         const cleaned = text.replace(/,/g, '');
+        // Prefer a $-prefixed amount if present...
         const matches = cleaned.match(/\$\s*\d+(?:\.\d{1,2})?/g);
         if (matches && matches.length)
             return parseFloat(matches[matches.length - 1].replace(/[^\d.]/g, ''));
+        // ...otherwise fall back to the first plain number in the selection.
         const m = cleaned.match(/\d+(?:\.\d{1,2})?/);
         return m ? parseFloat(m[0]) : NaN;
     }
 
-    function readPrice(e) {
-        const selPrice = extractPrice(window.getSelection().toString());
-        if (!isNaN(selPrice) && selPrice > 0) return selPrice;
-        const path = (typeof e.composedPath === 'function' && e.composedPath()) || [e.target];
-        for (const node of path) {
-            if (node && node.nodeType === 1 && typeof node.textContent === 'string') {
-                const t = node.textContent.trim();
-                if (t.length > 0 && t.length <= 60) {
-                    const p = extractPrice(t);
-                    if (!isNaN(p) && p > 0) return p;
+    // Read ONLY what the user has highlighted. Includes a shadow-DOM fallback
+    // so selections inside web-component / SPA shadow roots still register.
+    function getSelectedText(e) {
+        let text = (window.getSelection && window.getSelection().toString()) || '';
+        if (text.trim()) return text;
+
+        if (e && typeof e.composedPath === 'function') {
+            for (const node of e.composedPath()) {
+                if (node && node.shadowRoot && typeof node.shadowRoot.getSelection === 'function') {
+                    const t = node.shadowRoot.getSelection().toString();
+                    if (t && t.trim()) return t;
+                }
+                if (typeof ShadowRoot !== 'undefined' && node instanceof ShadowRoot
+                    && typeof node.getSelection === 'function') {
+                    const t = node.getSelection().toString();
+                    if (t && t.trim()) return t;
                 }
             }
-            if (node === document.body) break;
         }
-        return NaN;
+        return text;
+    }
+
+    function hide() {
+        popup.style.setProperty('display', 'none', 'important');
     }
 
     function showAt(clientX, clientY) {
@@ -136,21 +147,49 @@
         }
     }
 
-    function handle(e) {
-        if (e.target === popup || popup.contains(e.target)) return;
-        const basePrice = readPrice(e);
+    // Figure out a good anchor point for the popup from the current selection,
+    // used when there's no mouse coordinate (e.g. keyboard selection).
+    function selectionPoint() {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount) {
+            const r = sel.getRangeAt(0).getBoundingClientRect();
+            if (r && (r.width || r.height)) return { x: r.right, y: r.bottom };
+        }
+        return { x: 60, y: 60 };
+    }
+
+    function handleSelection(e) {
+        if (e && (e.target === popup || popup.contains(e.target))) return;
+
+        const text = getSelectedText(e);
+        // No highlight = do nothing visible.
+        if (!text.trim()) { hide(); return; }
+
+        const basePrice = extractPrice(text);
         if (!isNaN(basePrice) && basePrice > 0) {
             render(basePrice * (1 + GST_RATE));
-            showAt(e.clientX, e.clientY);
+            let x, y;
+            if (e && typeof e.clientX === 'number' && (e.clientX || e.clientY)) {
+                x = e.clientX; y = e.clientY;
+            } else {
+                const p = selectionPoint(); x = p.x; y = p.y;
+            }
+            showAt(x, y);
         } else {
-            popup.style.setProperty('display', 'none', 'important');
+            hide();
         }
     }
 
-    document.addEventListener('mouseup', handle, true);
-    document.addEventListener('click', handle, true);
+    // Mouse highlight: react when the drag-select finishes.
+    document.addEventListener('mouseup', handleSelection, true);
+
+    // Keyboard highlight (Shift+arrows, Ctrl/Cmd+A, etc.).
+    document.addEventListener('keyup', (e) => {
+        if (e.shiftKey || e.key === 'Shift' || (e.ctrlKey || e.metaKey)) handleSelection(e);
+    }, true);
+
+    // Click away (or start a new drag) dismisses the popup.
     document.addEventListener('mousedown', (e) => {
-        if (e.target !== popup && !popup.contains(e.target))
-            popup.style.setProperty('display', 'none', 'important');
+        if (e.target !== popup && !popup.contains(e.target)) hide();
     }, true);
 })();
