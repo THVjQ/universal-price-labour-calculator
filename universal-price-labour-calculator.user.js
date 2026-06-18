@@ -5,7 +5,7 @@
 // @description  Highlight a price/number to see Price + GST + Labour totals. Selection-only (no click triggers).
 // @author       Gemini (patched)
 // @match        *://*/*
-// @grant        none
+// @grant        GM_xmlhttpRequest
 // @run-at       document-idle
 // ==/UserScript==
 (function() {
