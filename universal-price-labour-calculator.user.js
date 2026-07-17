@@ -1,3 +1,4 @@
+// OTHER
 // ==UserScript==
 // @name         Universal Price & Labour Calculator
 // @namespace    http://tampermonkey.net/
